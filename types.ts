@@ -9,6 +9,11 @@ export enum ManualRevealMode {
   TIMER = 'TIMER',       // Digits auto-reveal one by one with timer
 }
 
+export enum AutoStopMode {
+  TIMER = 'TIMER',       // Auto-stop after spinDuration (default)
+  MANUAL = 'MANUAL',     // User clicks button to reveal result
+}
+
 export enum RandomSource {
   LOCAL = 'LOCAL',           // Use crypto.getRandomValues()
   RANDOM_ORG = 'RANDOM_ORG', // Use Random.org API
@@ -22,6 +27,7 @@ export interface Prize {
   spinDuration: number; // Duration in ms before stopping (or between stops for sequential)
   digitCount: number; // usually 3
   manualRevealMode?: ManualRevealMode; // Only used when spinMode is MANUAL - CLICK (user clicks) or TIMER (auto reveal with timer)
+  autoStopMode?: AutoStopMode; // Only used when spinMode is ALL_AT_ONCE - TIMER (auto) or MANUAL (click to reveal)
 }
 
 export interface Winner {

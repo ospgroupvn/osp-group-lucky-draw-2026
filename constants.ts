@@ -1,4 +1,4 @@
-import { Prize, SpinMode, GlobalSettings, RandomSource, ManualRevealMode } from './types';
+import { Prize, SpinMode, GlobalSettings, RandomSource, ManualRevealMode, AutoStopMode } from './types';
 
 export const DEFAULT_SETTINGS: GlobalSettings = {
   minNumber: 0,
@@ -50,6 +50,7 @@ export const DEFAULT_PRIZES: Prize[] = [
     name: 'Giải Khuyến Khích',
     quantity: 6,
     spinMode: SpinMode.ALL_AT_ONCE,
+    autoStopMode: AutoStopMode.MANUAL,
     spinDuration: 5000, // 5s
     digitCount: 3,
   }

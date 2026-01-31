@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { HistorySidebar } from './components/HistorySidebar';
-import { SlotMachine } from './components/SlotMachine';
+import { SlotMachine, SlotMachineRef } from './components/SlotMachine';
 import { SettingsModal } from './components/SettingsModal';
 import { Confetti } from './components/Confetti';
 import { DEFAULT_PRIZES, DEFAULT_SETTINGS } from './constants';
-import { Prize, Winner, GlobalSettings, RandomSource, SpinMode, ManualRevealMode } from './types';
-import { Settings, Play, FastForward, RotateCcw, Volume2, VolumeX, AlertCircle, Trophy, PanelLeftClose, PanelLeftOpen, Sparkles } from 'lucide-react';
+import { Prize, Winner, GlobalSettings, RandomSource, SpinMode, ManualRevealMode, AutoStopMode } from './types';
+import { Settings, Play, FastForward, RotateCcw, Volume2, VolumeX, AlertCircle, Trophy, PanelLeftClose, PanelLeftOpen, Sparkles, Eye } from 'lucide-react';
 import { soundManager } from './utils/SoundManager';
 
 const App: React.FC = () => {
@@ -57,6 +57,9 @@ const App: React.FC = () => {
   // Audio refs
   const spinOscillatorRef = useRef<HTMLAudioElement | null>(null);
   const wasCompleteOnMount = useRef(false);
+
+  // SlotMachine ref for manual reveal
+  const slotMachineRef = useRef<SlotMachineRef>(null);
 
   // Ref to always have latest winners (to avoid stale closure in generateRandomNumber)
   const winnersRef = useRef<Winner[]>(winners);
@@ -605,12 +608,14 @@ const App: React.FC = () => {
                   </div>
                 )}
                 <SlotMachine
+                    ref={slotMachineRef}
                     targetNumber={targetNumber}
                     isSpinning={isSpinning}
                     digitCount={currentPrize.digitCount}
                     spinMode={currentPrize.spinMode}
                     spinDuration={currentPrize.spinDuration}
                     manualRevealMode={currentPrize.manualRevealMode}
+                    autoStopMode={currentPrize.autoStopMode}
                     onFinished={handleSpinFinished}
                     onStopDigit={handleStopDigit}
                     onStartedSpin={handleStartSpin}
@@ -679,7 +684,29 @@ const App: React.FC = () => {
                             </span>
                         </button>
                     )
+                ) : currentPrize.spinMode === SpinMode.ALL_AT_ONCE && currentPrize.autoStopMode === AutoStopMode.MANUAL ? (
+                    /* ALL_AT_ONCE + MANUAL stop mode */
+                    isSpinning ? (
+                        <button
+                            onClick={() => slotMachineRef.current?.revealResult()}
+                            className="group relative px-8 sm:px-12 md:px-16 py-4 sm:py-5 md:py-6 rounded-xl sm:rounded-2xl font-black text-xl sm:text-2xl md:text-3xl uppercase tracking-widest text-white shadow-2xl transition-all transform hover:-translate-y-1 active:translate-y-0 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 shadow-orange-500/40 animate-pulse"
+                        >
+                            <span className="flex items-center gap-2 sm:gap-3">
+                                <Eye className="w-6 h-6 sm:w-8 sm:h-8" /> <span className="hidden sm:inline">Hiện Kết Quả</span><span className="sm:hidden">Hiện</span>
+                            </span>
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleStartSpin}
+                            className="group relative px-8 sm:px-12 md:px-16 py-4 sm:py-5 md:py-6 rounded-xl sm:rounded-2xl font-black text-xl sm:text-2xl md:text-3xl uppercase tracking-widest text-white shadow-2xl transition-all transform hover:-translate-y-1 active:translate-y-0 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-500/40"
+                        >
+                            <span className="flex items-center gap-2 sm:gap-3">
+                                <Play className="fill-current w-6 h-6 sm:w-8 sm:h-8" /> Quay Số
+                            </span>
+                        </button>
+                    )
                 ) : (
+                    /* ALL_AT_ONCE + TIMER mode or SEQUENTIAL mode */
                     <button
                         onClick={handleStartSpin}
                         disabled={isSpinning}

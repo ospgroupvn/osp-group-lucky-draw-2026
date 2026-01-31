@@ -27,10 +27,28 @@ export class SoundManager {
 
   public setMute(mute: boolean) {
     this.isMuted = mute;
+
+    // Apply mute state to currently loaded audio elements
+    if (this.spinAudio) {
+      this.spinAudio.muted = mute;
+    }
+    if (this.applauseAudio) {
+      this.applauseAudio.muted = mute;
+    }
+
+    // Suspend/resume AudioContext for oscillator sounds
+    if (this.ctx) {
+      if (mute && this.ctx.state === 'running') {
+        this.ctx.suspend();
+      } else if (!mute && this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    }
   }
 
   public resume() {
-    if (this.ctx && this.ctx.state === 'suspended') {
+    // Only resume if not muted
+    if (this.ctx && this.ctx.state === 'suspended' && !this.isMuted) {
       this.ctx.resume();
     }
   }

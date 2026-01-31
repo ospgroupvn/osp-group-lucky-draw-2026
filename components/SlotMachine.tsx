@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { SpinMode, ManualRevealMode } from '../types';
+import React, { useEffect, useState, useRef, useImperativeHandle, forwardRef } from 'react';
+import { SpinMode, ManualRevealMode, AutoStopMode } from '../types';
 
 interface SlotMachineProps {
   targetNumber: string | null; // The result to land on. Null if just spinning randomly.
@@ -8,12 +8,18 @@ interface SlotMachineProps {
   spinMode: SpinMode;
   spinDuration: number; // Time in ms
   manualRevealMode?: ManualRevealMode; // Only used when spinMode is MANUAL - CLICK or TIMER
+  autoStopMode?: AutoStopMode; // Only used when spinMode is ALL_AT_ONCE - TIMER or MANUAL
   onFinished: () => void;
   onStopDigit?: () => void; // Trigger sound
   onStartedSpin?: () => void; // Called when spin starts (for MANUAL mode)
   onDigitSpinStart?: () => void; // Called when a digit starts spinning (for MANUAL mode)
   onDigitSpinStop?: (stillSpinning: boolean) => void; // Called when a digit stops spinning (for MANUAL mode). stillSpinning = true if other digits are still spinning
   isManualSpinActive?: boolean; // Track if a MANUAL spin session is active (from parent)
+}
+
+// Expose methods to parent via ref
+export interface SlotMachineRef {
+  revealResult: () => void; // Stop all digits and reveal result (for ALL_AT_ONCE + MANUAL mode)
 }
 
 interface SlotDigitProps {
@@ -92,20 +98,21 @@ const SlotDigit: React.FC<SlotDigitProps> = ({
   );
 };
 
-export const SlotMachine: React.FC<SlotMachineProps> = ({
+export const SlotMachine = forwardRef<SlotMachineRef, SlotMachineProps>(({
   targetNumber,
   isSpinning,
   digitCount,
   spinMode,
   spinDuration,
   manualRevealMode = ManualRevealMode.CLICK,
+  autoStopMode = AutoStopMode.MANUAL,
   onFinished,
   onStopDigit,
   onStartedSpin,
   onDigitSpinStart,
   onDigitSpinStop,
   isManualSpinActive
-}) => {
+}, ref) => {
   // For MANUAL mode: Track individual digit states
   // Each digit can be: waiting (?) → spinning → stopped (showing actual value)
   const [digitSpinningState, setDigitSpinningState] = useState<boolean[]>(
@@ -233,6 +240,19 @@ export const SlotMachine: React.FC<SlotMachineProps> = ({
     }
   }, [digitStoppedState, spinMode, onFinished, manualSpinStarted]);
 
+  // Function to reveal result (stop all digits) - used for ALL_AT_ONCE + MANUAL mode
+  const revealResult = () => {
+    if (!isSpinning || !targetNumber) return;
+    setDigitStoppedState(Array(digitCount).fill(true));
+    if (onStopDigit) onStopDigit();
+    onFinished();
+  };
+
+  // Expose revealResult to parent via ref
+  useImperativeHandle(ref, () => ({
+    revealResult
+  }), [isSpinning, targetNumber, digitCount, onStopDigit, onFinished]);
+
   // Handle Stopping Logic for AUTO modes (ALL_AT_ONCE, SEQUENTIAL)
   useEffect(() => {
     if (spinMode === SpinMode.MANUAL) return; // Skip for MANUAL mode
@@ -241,10 +261,14 @@ export const SlotMachine: React.FC<SlotMachineProps> = ({
     const timeouts: ReturnType<typeof setTimeout>[] = [];
 
     if (spinMode === SpinMode.ALL_AT_ONCE) {
-      // Stop all at once after duration
+      // If autoStopMode is MANUAL, don't auto-stop - wait for user to click reveal button
+      if (autoStopMode === AutoStopMode.MANUAL) {
+        return; // Don't set any timeout - user will call revealResult via ref
+      }
+      // Stop all at once after duration (TIMER mode)
       const t = setTimeout(() => {
         setDigitStoppedState(Array(digitCount).fill(true));
-        if(onStopDigit) onStopDigit();
+        if (onStopDigit) onStopDigit();
         onFinished();
       }, spinDuration);
       timeouts.push(t);
@@ -271,7 +295,7 @@ export const SlotMachine: React.FC<SlotMachineProps> = ({
     return () => {
       timeouts.forEach(clearTimeout);
     };
-  }, [isSpinning, targetNumber, spinMode, spinDuration, digitCount, onFinished]);
+  }, [isSpinning, targetNumber, spinMode, spinDuration, digitCount, onFinished, autoStopMode]);
 
   // Function to start spinning a digit (for MANUAL + CLICK mode - no auto-stop)
   const startDigitSpin = (index: number) => {
@@ -383,13 +407,17 @@ export const SlotMachine: React.FC<SlotMachineProps> = ({
   // In MANUAL mode with CLICK reveal:
   // - Click once to START spinning a digit
   // - Click again to STOP that spinning digit
+  // - Only ONE digit can spin at a time (other digits are disabled while one is spinning)
   // In TIMER mode, clicking is disabled
   const areAllDigitsStopped = digitStoppedState.every(s => s);
+  const isAnyDigitSpinning = digitSpinningState.some(s => s);
   const isDigitClickable = (idx: number) => {
     if (spinMode !== SpinMode.MANUAL) return false;
     if (manualRevealMode === ManualRevealMode.TIMER) return false; // TIMER mode doesn't allow clicking
-    // Allow clicking if digit is spinning (to stop it)
+    // Allow clicking if THIS digit is spinning (to stop it)
     if (digitSpinningState[idx]) return true;
+    // If ANY digit is currently spinning, disable all other digits
+    if (isAnyDigitSpinning) return false;
     // Allow clicking any digit if all are stopped (starting new spin cycle)
     if (areAllDigitsStopped) return true;
     // Allow clicking digits that are not yet stopped
@@ -412,4 +440,4 @@ export const SlotMachine: React.FC<SlotMachineProps> = ({
       ))}
     </div>
   );
-};
+});

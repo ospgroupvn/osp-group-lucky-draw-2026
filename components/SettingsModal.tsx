@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Prize, GlobalSettings, SpinMode, RandomSource, ManualRevealMode } from '../types';
+import { Prize, GlobalSettings, SpinMode, RandomSource, ManualRevealMode, AutoStopMode } from '../types';
 import { X, Plus, Trash2, Save, Settings as SettingsIcon } from 'lucide-react';
 
 interface SettingsModalProps {
@@ -48,6 +48,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     // When switching to MANUAL mode, set default manualRevealMode to CLICK if not set
     if (field === 'spinMode' && value === SpinMode.MANUAL && !newPrizes[index].manualRevealMode) {
       newPrizes[index].manualRevealMode = ManualRevealMode.CLICK;
+    }
+
+    // When switching to ALL_AT_ONCE mode, set default autoStopMode to MANUAL if not set
+    if (field === 'spinMode' && value === SpinMode.ALL_AT_ONCE && !newPrizes[index].autoStopMode) {
+      newPrizes[index].autoStopMode = AutoStopMode.MANUAL;
     }
 
     setLocalPrizes(newPrizes);
@@ -246,8 +251,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <option value={SpinMode.MANUAL}>Bấm từng số</option>
                       </select>
                     </div>
-                    {/* Hide duration field when MANUAL + CLICK mode (no timer needed) */}
-                    {!(prize.spinMode === SpinMode.MANUAL && (prize.manualRevealMode || ManualRevealMode.CLICK) === ManualRevealMode.CLICK) && (
+                    {/* Hide duration field when no timer needed:
+                        - MANUAL + CLICK mode
+                        - ALL_AT_ONCE + MANUAL mode */}
+                    {!(prize.spinMode === SpinMode.MANUAL && (prize.manualRevealMode || ManualRevealMode.CLICK) === ManualRevealMode.CLICK) &&
+                     !(prize.spinMode === SpinMode.ALL_AT_ONCE && prize.autoStopMode === AutoStopMode.MANUAL) && (
                       <div>
                         <label className="block text-slate-500 text-[10px] sm:text-xs mb-1">Thời gian (ms)</label>
                         <input
@@ -276,6 +284,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         {(prize.manualRevealMode || ManualRevealMode.CLICK) === ManualRevealMode.CLICK
                           ? 'Người điều khiển bấm vào từng ô số để mở'
                           : 'Sau khi bấm nút quay, các số sẽ tự động mở lần lượt theo thời gian đã cài đặt'}
+                      </p>
+                    </div>
+                  )}
+                  {/* Auto stop mode option - only show when spinMode is ALL_AT_ONCE */}
+                  {prize.spinMode === SpinMode.ALL_AT_ONCE && (
+                    <div className="mt-3 pt-3 border-t border-slate-100">
+                      <label className="block text-slate-500 text-[10px] sm:text-xs mb-1">Cách dừng số (chế độ Cùng lúc)</label>
+                      <select
+                        value={prize.autoStopMode || AutoStopMode.MANUAL}
+                        onChange={(e) => handlePrizeChange(index, 'autoStopMode', e.target.value)}
+                        className="w-full border rounded px-2 py-1.5 bg-white focus:ring-2 focus:ring-cyan-500 outline-none text-sm"
+                      >
+                        <option value={AutoStopMode.MANUAL}>Bấm nút để hiện kết quả</option>
+                        <option value={AutoStopMode.TIMER}>Tự động dừng theo thời gian</option>
+                      </select>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        {(prize.autoStopMode || AutoStopMode.MANUAL) === AutoStopMode.MANUAL
+                          ? 'Số sẽ quay liên tục cho đến khi người điều khiển bấm nút hiện kết quả'
+                          : 'Sau thời gian quay, số sẽ tự động dừng và hiện kết quả'}
                       </p>
                     </div>
                   )}
