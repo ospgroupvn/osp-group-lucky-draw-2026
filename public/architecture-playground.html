@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>OSP Lucky Draw 2026 - Architecture Explorer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: 1fr auto;
+      height: 100vh;
+    }
+
+    /* Mobile Toggle Button */
+    .menu-toggle {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      width: 44px;
+      height: 44px;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 20px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: #1e293b;
+      border-right: 1px solid #334155;
+      padding: 16px;
+      overflow-y: auto;
+      grid-row: 1 / 3;
+      z-index: 150;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    .section { margin-bottom: 24px; }
+
+    .preset-btn {
+      display: block;
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      background: #334155;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      color: #e2e8f0;
+      cursor: pointer;
+      text-align: left;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+
+    .preset-btn:hover { background: #475569; }
+    .preset-btn.active { background: #3b82f6; border-color: #60a5fa; }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .checkbox-item input {
+      width: 18px;
+      height: 18px;
+      accent-color: #3b82f6;
+    }
+
+    .checkbox-item .color-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .checkbox-item label {
+      font-size: 13px;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    /* Comments Section */
+    .comments-section {
+      border-top: 1px solid #334155;
+      padding-top: 16px;
+    }
+
+    .comment-count {
+      background: #3b82f6;
+      color: white;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-left: 6px;
+    }
+
+    .comment-item {
+      background: #334155;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .comment-item .target {
+      color: #60a5fa;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .comment-item .text {
+      color: #cbd5e1;
+      line-height: 1.4;
+    }
+
+    .comment-item .delete-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+
+    .no-comments {
+      color: #64748b;
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    /* Canvas Area */
+    .canvas-area {
+      background: #0f172a;
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .canvas-area.dragging { cursor: grabbing; }
+
+    .zoom-controls {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: 4px;
+      z-index: 10;
+    }
+
+    .zoom-btn {
+      width: 44px;
+      height: 44px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .zoom-btn:hover { background: #334155; }
+    .zoom-btn:active { background: #475569; }
+
+    #diagram {
+      width: 100%;
+      height: 100%;
+      will-change: transform;
+    }
+
+    /* Legend */
+    .legend {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 11px;
+    }
+
+    .legend-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #94a3b8;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .legend-item .line {
+      width: 24px;
+      height: 3px;
+      border-radius: 2px;
+    }
+
+    .legend-hint {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #334155;
+      color: #64748b;
+      font-size: 10px;
+    }
+
+    /* Prompt Output */
+    .prompt-area {
+      background: #1e293b;
+      border-top: 1px solid #334155;
+      padding: 12px 16px;
+    }
+
+    .prompt-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .prompt-header h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+
+    .copy-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .copy-btn:hover { background: #2563eb; }
+    .copy-btn:active { background: #1d4ed8; }
+    .copy-btn.copied { background: #10b981; }
+
+    #prompt-output {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      max-height: 120px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      padding: 16px;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 12px;
+      padding: 20px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .modal h3 {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .modal .file-path {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 16px;
+    }
+
+    .modal textarea {
+      width: 100%;
+      height: 100px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 12px;
+      color: #e2e8f0;
+      font-size: 16px;
+      resize: none;
+      margin-bottom: 16px;
+    }
+
+    .modal textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .modal-btn {
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .modal-btn.cancel { background: #334155; color: #e2e8f0; }
+    .modal-btn.save { background: #3b82f6; color: white; }
+
+    /* SVG Node Styles */
+    .node-rect {
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+
+    .node-rect:hover { filter: brightness(1.1); }
+
+    .node-label {
+      font-size: 11px;
+      font-weight: 600;
+      pointer-events: none;
+    }
+
+    .node-subtitle {
+      font-size: 9px;
+      fill: #64748b;
+      pointer-events: none;
+    }
+
+    .has-comment {
+      stroke: #f59e0b;
+      stroke-width: 3;
+    }
+
+    /* Overlay for closing sidebar */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 140;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+      }
+
+      .menu-toggle {
+        display: flex;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 280px;
+        height: 100%;
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .sidebar-overlay.open {
+        display: block;
+      }
+
+      .legend {
+        bottom: auto;
+        top: 12px;
+        left: auto;
+        right: 70px;
+        padding: 8px 10px;
+        font-size: 10px;
+      }
+
+      .legend-title { display: none; }
+      .legend-item { margin-bottom: 2px; }
+      .legend-item .line { width: 16px; }
+      .legend-hint { display: none; }
+
+      .prompt-area {
+        padding: 10px 12px;
+      }
+
+      #prompt-output {
+        max-height: 80px;
+        font-size: 11px;
+        padding: 8px;
+      }
+
+      .zoom-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+      }
+
+      .copy-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .legend {
+        display: none;
+      }
+
+      .zoom-controls {
+        top: 8px;
+        right: 8px;
+      }
+
+      .zoom-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+      }
+
+      .menu-toggle {
+        width: 40px;
+        height: 40px;
+        top: 8px;
+        left: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" id="menu-toggle">☰</button>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <div class="section">
+        <h2>Chế độ xem</h2>
+        <button class="preset-btn active" data-preset="full">🔍 Toàn bộ hệ thống</button>
+        <button class="preset-btn" data-preset="ui">🎨 UI Components</button>
+        <button class="preset-btn" data-preset="data">📊 Data Flow</button>
+        <button class="preset-btn" data-preset="audio">🔊 Audio System</button>
+        <button class="preset-btn" data-preset="state">⚡ State Management</button>
+      </div>
+
+      <div class="section">
+        <h2>Layers</h2>
+        <div class="checkbox-item">
+          <input type="checkbox" id="layer-ui" checked>
+          <span class="color-dot" style="background: #dbeafe;"></span>
+          <label for="layer-ui">UI Components</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="layer-logic" checked>
+          <span class="color-dot" style="background: #dcfce7;"></span>
+          <label for="layer-logic">Business Logic</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="layer-data" checked>
+          <span class="color-dot" style="background: #fce7f3;"></span>
+          <label for="layer-data">Data & Storage</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="layer-utils" checked>
+          <span class="color-dot" style="background: #f3e8ff;"></span>
+          <label for="layer-utils">Utilities</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="layer-external" checked>
+          <span class="color-dot" style="background: #fef3c7;"></span>
+          <label for="layer-external">External Services</label>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Kết nối</h2>
+        <div class="checkbox-item">
+          <input type="checkbox" id="conn-data" checked>
+          <span class="color-dot" style="background: #3b82f6;"></span>
+          <label for="conn-data">Data Flow</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="conn-props" checked>
+          <span class="color-dot" style="background: #10b981;"></span>
+          <label for="conn-props">Props Passing</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="conn-events" checked>
+          <span class="color-dot" style="background: #ef4444;"></span>
+          <label for="conn-events">Events/Callbacks</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="conn-import" checked>
+          <span class="color-dot" style="background: #6b7280;"></span>
+          <label for="conn-import">Imports</label>
+        </div>
+      </div>
+
+      <div class="section comments-section">
+        <h2>Ghi chú <span class="comment-count" id="comment-count">0</span></h2>
+        <div id="comments-list">
+          <p class="no-comments">Tap vào component để thêm ghi chú</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-area" id="canvas-area">
+      <div class="zoom-controls">
+        <button class="zoom-btn" id="zoom-in">+</button>
+        <button class="zoom-btn" id="zoom-out">−</button>
+        <button class="zoom-btn" id="zoom-reset">⟲</button>
+      </div>
+
+      <svg id="diagram" viewBox="0 0 900 700">
+        <defs>
+          <marker id="arrow-data" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#3b82f6"/>
+          </marker>
+          <marker id="arrow-props" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+          </marker>
+          <marker id="arrow-events" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
+          </marker>
+          <marker id="arrow-import" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#6b7280"/>
+          </marker>
+        </defs>
+        <g id="transform-group">
+          <g id="connections-layer"></g>
+          <g id="nodes-layer"></g>
+        </g>
+      </svg>
+
+      <div class="legend">
+        <div class="legend-title">Chú thích</div>
+        <div class="legend-item">
+          <div class="line" style="background: #3b82f6;"></div>
+          <span>Data</span>
+        </div>
+        <div class="legend-item">
+          <div class="line" style="background: #10b981;"></div>
+          <span>Props</span>
+        </div>
+        <div class="legend-item">
+          <div class="line" style="background: #ef4444;"></div>
+          <span>Events</span>
+        </div>
+        <div class="legend-item">
+          <div class="line" style="background: #6b7280; opacity: 0.5;"></div>
+          <span>Import</span>
+        </div>
+        <div class="legend-hint">Kéo để di chuyển • Pinch để zoom</div>
+      </div>
+    </div>
+
+    <!-- Prompt Output -->
+    <div class="prompt-area">
+      <div class="prompt-header">
+        <h3>📋 Prompt</h3>
+        <button class="copy-btn" id="copy-btn">Copy</button>
+      </div>
+      <div id="prompt-output">Đây là sơ đồ kiến trúc của ứng dụng OSP Lucky Draw 2026.</div>
+    </div>
+  </div>
+
+  <!-- Comment Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h3 id="modal-title">Component Name</h3>
+      <p class="file-path" id="modal-path">path/to/file.ts</p>
+      <textarea id="modal-comment" placeholder="Nhập ghi chú..."></textarea>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="modal-cancel">Hủy</button>
+        <button class="modal-btn save" id="modal-save">Lưu</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== DATA =====
+    const nodes = [
+      // UI Layer
+      { id: 'app', label: 'App.tsx', subtitle: 'Main Application', x: 400, y: 50, w: 130, h: 50, layer: 'ui', color: '#dbeafe' },
+      { id: 'slot-machine', label: 'SlotMachine', subtitle: 'components/SlotMachine.tsx', x: 180, y: 140, w: 130, h: 50, layer: 'ui', color: '#dbeafe' },
+      { id: 'history-sidebar', label: 'HistorySidebar', subtitle: 'components/HistorySidebar.tsx', x: 620, y: 140, w: 140, h: 50, layer: 'ui', color: '#dbeafe' },
+      { id: 'settings-modal', label: 'SettingsModal', subtitle: 'components/SettingsModal.tsx', x: 400, y: 140, w: 130, h: 50, layer: 'ui', color: '#dbeafe' },
+      { id: 'confetti', label: 'Confetti', subtitle: 'components/Confetti.tsx', x: 50, y: 140, w: 100, h: 50, layer: 'ui', color: '#dbeafe' },
+      { id: 'slot-digit', label: 'SlotDigit', subtitle: 'Inside SlotMachine', x: 180, y: 230, w: 100, h: 45, layer: 'ui', color: '#bfdbfe' },
+
+      // Logic Layer
+      { id: 'spin-logic', label: 'Spin Logic', subtitle: 'handleStartSpin()', x: 100, y: 320, w: 110, h: 45, layer: 'logic', color: '#dcfce7' },
+      { id: 'random-gen', label: 'Random Generator', subtitle: 'generateRandomNumber()', x: 250, y: 320, w: 140, h: 45, layer: 'logic', color: '#dcfce7' },
+      { id: 'winner-logic', label: 'Winner Logic', subtitle: 'handleSpinFinished()', x: 420, y: 320, w: 130, h: 45, layer: 'logic', color: '#dcfce7' },
+      { id: 'prize-nav', label: 'Prize Navigation', subtitle: 'handleNextPrize()', x: 580, y: 320, w: 140, h: 45, layer: 'logic', color: '#dcfce7' },
+
+      // Data Layer
+      { id: 'state-prizes', label: 'prizes[]', subtitle: 'Prize configurations', x: 100, y: 410, w: 110, h: 45, layer: 'data', color: '#fce7f3' },
+      { id: 'state-winners', label: 'winners[]', subtitle: 'Winner records', x: 250, y: 410, w: 110, h: 45, layer: 'data', color: '#fce7f3' },
+      { id: 'state-settings', label: 'settings', subtitle: 'GlobalSettings', x: 400, y: 410, w: 110, h: 45, layer: 'data', color: '#fce7f3' },
+      { id: 'local-storage', label: 'localStorage', subtitle: 'Persistence layer', x: 560, y: 410, w: 120, h: 45, layer: 'data', color: '#fce7f3' },
+
+      // Utilities Layer
+      { id: 'sound-manager', label: 'SoundManager', subtitle: 'utils/SoundManager.ts', x: 100, y: 500, w: 130, h: 45, layer: 'utils', color: '#f3e8ff' },
+      { id: 'types', label: 'Types', subtitle: 'types.ts', x: 270, y: 500, w: 100, h: 45, layer: 'utils', color: '#f3e8ff' },
+      { id: 'constants', label: 'Constants', subtitle: 'constants.ts', x: 400, y: 500, w: 110, h: 45, layer: 'utils', color: '#f3e8ff' },
+
+      // External Layer
+      { id: 'random-org', label: 'Random.org API', subtitle: 'External API', x: 250, y: 580, w: 130, h: 45, layer: 'external', color: '#fef3c7' },
+      { id: 'web-audio', label: 'Web Audio API', subtitle: 'Browser API', x: 100, y: 580, w: 120, h: 45, layer: 'external', color: '#fef3c7' },
+      { id: 'crypto-api', label: 'Crypto API', subtitle: 'Browser API', x: 410, y: 580, w: 110, h: 45, layer: 'external', color: '#fef3c7' },
+    ];
+
+    const connections = [
+      { from: 'app', to: 'slot-machine', type: 'props' },
+      { from: 'app', to: 'history-sidebar', type: 'props' },
+      { from: 'app', to: 'settings-modal', type: 'props' },
+      { from: 'app', to: 'confetti', type: 'props' },
+      { from: 'slot-machine', to: 'app', type: 'events' },
+      { from: 'settings-modal', to: 'app', type: 'events' },
+      { from: 'history-sidebar', to: 'app', type: 'events' },
+      { from: 'slot-machine', to: 'slot-digit', type: 'props' },
+      { from: 'slot-digit', to: 'slot-machine', type: 'events' },
+      { from: 'app', to: 'spin-logic', type: 'data' },
+      { from: 'spin-logic', to: 'random-gen', type: 'data' },
+      { from: 'random-gen', to: 'winner-logic', type: 'data' },
+      { from: 'winner-logic', to: 'prize-nav', type: 'data' },
+      { from: 'spin-logic', to: 'state-prizes', type: 'data' },
+      { from: 'random-gen', to: 'state-winners', type: 'data' },
+      { from: 'random-gen', to: 'state-settings', type: 'data' },
+      { from: 'winner-logic', to: 'state-winners', type: 'data' },
+      { from: 'state-prizes', to: 'local-storage', type: 'data' },
+      { from: 'state-winners', to: 'local-storage', type: 'data' },
+      { from: 'state-settings', to: 'local-storage', type: 'data' },
+      { from: 'app', to: 'sound-manager', type: 'import' },
+      { from: 'slot-machine', to: 'sound-manager', type: 'import' },
+      { from: 'app', to: 'types', type: 'import' },
+      { from: 'app', to: 'constants', type: 'import' },
+      { from: 'settings-modal', to: 'types', type: 'import' },
+      { from: 'random-gen', to: 'random-org', type: 'data' },
+      { from: 'random-gen', to: 'crypto-api', type: 'data' },
+      { from: 'sound-manager', to: 'web-audio', type: 'data' },
+    ];
+
+    // ===== STATE =====
+    const state = {
+      preset: 'full',
+      layers: { ui: true, logic: true, data: true, utils: true, external: true },
+      connections: { data: true, props: true, events: true, import: true },
+      comments: [],
+      // Transform state
+      scale: 1,
+      panX: 0,
+      panY: 0,
+      // Interaction state
+      isDragging: false,
+      startX: 0,
+      startY: 0,
+      lastPanX: 0,
+      lastPanY: 0,
+      // Velocity for momentum
+      velocityX: 0,
+      velocityY: 0,
+      lastMoveTime: 0,
+      // Pinch zoom
+      initialPinchDistance: 0,
+      initialScale: 1,
+      // Animation
+      animationId: null
+    };
+
+    const presets = {
+      full: { layers: { ui: true, logic: true, data: true, utils: true, external: true }, connections: { data: true, props: true, events: true, import: true } },
+      ui: { layers: { ui: true, logic: false, data: false, utils: false, external: false }, connections: { data: false, props: true, events: true, import: false } },
+      data: { layers: { ui: false, logic: true, data: true, utils: false, external: true }, connections: { data: true, props: false, events: false, import: false } },
+      audio: { layers: { ui: true, logic: false, data: false, utils: true, external: true }, connections: { data: true, props: false, events: false, import: true } },
+      state: { layers: { ui: true, logic: true, data: true, utils: false, external: false }, connections: { data: true, props: true, events: true, import: false } }
+    };
+
+    // ===== DOM ELEMENTS =====
+    const canvasArea = document.getElementById('canvas-area');
+    const transformGroup = document.getElementById('transform-group');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const menuToggle = document.getElementById('menu-toggle');
+
+    // ===== RENDER =====
+    function applyTransform() {
+      transformGroup.setAttribute('transform', `translate(${state.panX}, ${state.panY}) scale(${state.scale})`);
+    }
+
+    function renderDiagram() {
+      const nodesLayer = document.getElementById('nodes-layer');
+      const connectionsLayer = document.getElementById('connections-layer');
+
+      nodesLayer.innerHTML = '';
+      connectionsLayer.innerHTML = '';
+
+      const visibleNodes = nodes.filter(n => state.layers[n.layer]);
+      const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
+
+      // Draw connections
+      connections.forEach(conn => {
+        if (!state.connections[conn.type]) return;
+        if (!visibleNodeIds.has(conn.from) || !visibleNodeIds.has(conn.to)) return;
+
+        const fromNode = nodes.find(n => n.id === conn.from);
+        const toNode = nodes.find(n => n.id === conn.to);
+
+        const x1 = fromNode.x + fromNode.w / 2;
+        const y1 = fromNode.y + fromNode.h;
+        const x2 = toNode.x + toNode.w / 2;
+        const y2 = toNode.y;
+
+        const colors = { data: '#3b82f6', props: '#10b981', events: '#ef4444', import: '#6b7280' };
+        const dashArrays = { data: '', props: '', events: '6,4', import: '3,3' };
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const midY = (y1 + y2) / 2;
+        path.setAttribute('d', `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', colors[conn.type]);
+        path.setAttribute('stroke-width', conn.type === 'import' ? '1' : '2');
+        path.setAttribute('stroke-dasharray', dashArrays[conn.type]);
+        path.setAttribute('marker-end', `url(#arrow-${conn.type})`);
+        path.setAttribute('opacity', conn.type === 'import' ? '0.4' : '0.7');
+
+        connectionsLayer.appendChild(path);
+      });
+
+      // Draw nodes
+      visibleNodes.forEach(node => {
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+        g.setAttribute('data-node-id', node.id);
+        g.style.cursor = 'pointer';
+
+        const hasComment = state.comments.some(c => c.target === node.id);
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('width', node.w);
+        rect.setAttribute('height', node.h);
+        rect.setAttribute('rx', '6');
+        rect.setAttribute('fill', node.color);
+        rect.setAttribute('class', 'node-rect' + (hasComment ? ' has-comment' : ''));
+        if (!hasComment) {
+          rect.setAttribute('stroke', '#475569');
+          rect.setAttribute('stroke-width', '1');
+        }
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', node.w / 2);
+        text.setAttribute('y', node.h / 2 - 4);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('class', 'node-label');
+        text.setAttribute('fill', '#1e293b');
+        text.textContent = node.label;
+
+        const subtitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        subtitle.setAttribute('x', node.w / 2);
+        subtitle.setAttribute('y', node.h / 2 + 10);
+        subtitle.setAttribute('text-anchor', 'middle');
+        subtitle.setAttribute('class', 'node-subtitle');
+        subtitle.textContent = node.subtitle.length > 22 ? node.subtitle.slice(0, 20) + '...' : node.subtitle;
+
+        g.appendChild(rect);
+        g.appendChild(text);
+        g.appendChild(subtitle);
+
+        if (hasComment) {
+          const badge = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          badge.setAttribute('cx', node.w - 5);
+          badge.setAttribute('cy', '5');
+          badge.setAttribute('r', '8');
+          badge.setAttribute('fill', '#f59e0b');
+          g.appendChild(badge);
+        }
+
+        nodesLayer.appendChild(g);
+      });
+
+      applyTransform();
+    }
+
+    function renderComments() {
+      const list = document.getElementById('comments-list');
+      document.getElementById('comment-count').textContent = state.comments.length;
+
+      if (state.comments.length === 0) {
+        list.innerHTML = '<p class="no-comments">Tap vào component để thêm ghi chú</p>';
+        return;
+      }
+
+      list.innerHTML = state.comments.map((c, i) => `
+        <div class="comment-item">
+          <div class="target">${c.targetLabel}</div>
+          <div class="text">${c.text}</div>
+          <button class="delete-btn" onclick="deleteComment(${i})">Xóa</button>
+        </div>
+      `).join('');
+    }
+
+    function updatePrompt() {
+      const presetNames = { full: 'toàn bộ hệ thống', ui: 'UI components', data: 'luồng dữ liệu', audio: 'hệ thống âm thanh', state: 'quản lý state' };
+      let prompt = `Sơ đồ kiến trúc OSP Lucky Draw 2026 - ${presetNames[state.preset] || 'custom view'}.`;
+
+      if (state.comments.length > 0) {
+        prompt += '\n\nGhi chú:\n';
+        state.comments.forEach(c => {
+          prompt += `\n• ${c.targetLabel}: ${c.text}`;
+        });
+      }
+
+      document.getElementById('prompt-output').textContent = prompt;
+    }
+
+    function updateAll() {
+      renderDiagram();
+      renderComments();
+      updatePrompt();
+    }
+
+    // ===== MODAL =====
+    let currentNode = null;
+
+    function openCommentModal(node) {
+      currentNode = node;
+      document.getElementById('modal-title').textContent = node.label;
+      document.getElementById('modal-path').textContent = node.subtitle;
+      const existing = state.comments.find(c => c.target === node.id);
+      document.getElementById('modal-comment').value = existing ? existing.text : '';
+      document.getElementById('modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+      currentNode = null;
+    }
+
+    function saveComment() {
+      const text = document.getElementById('modal-comment').value.trim();
+      state.comments = state.comments.filter(c => c.target !== currentNode.id);
+      if (text) {
+        state.comments.push({
+          id: Date.now(),
+          target: currentNode.id,
+          targetLabel: currentNode.label,
+          targetFile: currentNode.subtitle,
+          text: text
+        });
+      }
+      closeModal();
+      updateAll();
+    }
+
+    function deleteComment(index) {
+      state.comments.splice(index, 1);
+      updateAll();
+    }
+
+    // ===== SIDEBAR TOGGLE =====
+    function toggleSidebar() {
+      sidebar.classList.toggle('open');
+      sidebarOverlay.classList.toggle('open');
+    }
+
+    menuToggle.onclick = toggleSidebar;
+    sidebarOverlay.onclick = toggleSidebar;
+
+    // ===== MOMENTUM ANIMATION =====
+    function animateMomentum() {
+      const friction = 0.95;
+      const minVelocity = 0.5;
+
+      if (Math.abs(state.velocityX) > minVelocity || Math.abs(state.velocityY) > minVelocity) {
+        state.panX += state.velocityX;
+        state.panY += state.velocityY;
+        state.velocityX *= friction;
+        state.velocityY *= friction;
+        applyTransform();
+        state.animationId = requestAnimationFrame(animateMomentum);
+      } else {
+        state.animationId = null;
+      }
+    }
+
+    function stopMomentum() {
+      if (state.animationId) {
+        cancelAnimationFrame(state.animationId);
+        state.animationId = null;
+      }
+      state.velocityX = 0;
+      state.velocityY = 0;
+    }
+
+    // ===== TOUCH & MOUSE HANDLERS =====
+    function getEventPos(e) {
+      if (e.touches && e.touches.length > 0) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+      return { x: e.clientX, y: e.clientY };
+    }
+
+    function getPinchDistance(e) {
+      if (e.touches && e.touches.length >= 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+      return 0;
+    }
+
+    function handleStart(e) {
+      if (e.target.closest('.zoom-controls') || e.target.closest('.legend')) return;
+
+      stopMomentum();
+
+      // Check for pinch
+      if (e.touches && e.touches.length >= 2) {
+        state.initialPinchDistance = getPinchDistance(e);
+        state.initialScale = state.scale;
+        return;
+      }
+
+      const pos = getEventPos(e);
+      state.isDragging = true;
+      state.startX = pos.x;
+      state.startY = pos.y;
+      state.lastPanX = state.panX;
+      state.lastPanY = state.panY;
+      state.lastMoveTime = Date.now();
+
+      canvasArea.classList.add('dragging');
+    }
+
+    function handleMove(e) {
+      // Pinch zoom
+      if (e.touches && e.touches.length >= 2) {
+        e.preventDefault();
+        const distance = getPinchDistance(e);
+        if (state.initialPinchDistance > 0) {
+          const scaleChange = distance / state.initialPinchDistance;
+          state.scale = Math.max(0.3, Math.min(3, state.initialScale * scaleChange));
+          applyTransform();
+        }
+        return;
+      }
+
+      if (!state.isDragging) return;
+      e.preventDefault();
+
+      const pos = getEventPos(e);
+      const now = Date.now();
+      const dt = now - state.lastMoveTime;
+
+      const dx = (pos.x - state.startX) / state.scale;
+      const dy = (pos.y - state.startY) / state.scale;
+
+      // Calculate velocity
+      if (dt > 0) {
+        state.velocityX = (pos.x - state.startX - (state.panX - state.lastPanX) * state.scale) / dt * 16;
+        state.velocityY = (pos.y - state.startY - (state.panY - state.lastPanY) * state.scale) / dt * 16;
+      }
+
+      state.panX = state.lastPanX + dx;
+      state.panY = state.lastPanY + dy;
+      state.lastMoveTime = now;
+
+      applyTransform();
+    }
+
+    function handleEnd(e) {
+      if (e.touches && e.touches.length >= 2) {
+        state.initialPinchDistance = 0;
+        return;
+      }
+
+      if (state.isDragging) {
+        state.isDragging = false;
+        canvasArea.classList.remove('dragging');
+
+        // Start momentum
+        if (Math.abs(state.velocityX) > 2 || Math.abs(state.velocityY) > 2) {
+          state.velocityX /= state.scale;
+          state.velocityY /= state.scale;
+          animateMomentum();
+        }
+      }
+    }
+
+    // Detect node tap/click
+    let tapStartPos = null;
+    let tapStartTime = 0;
+
+    canvasArea.addEventListener('mousedown', (e) => {
+      tapStartPos = { x: e.clientX, y: e.clientY };
+      tapStartTime = Date.now();
+      handleStart(e);
+    });
+
+    canvasArea.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        tapStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        tapStartTime = Date.now();
+      }
+      handleStart(e);
+    }, { passive: false });
+
+    document.addEventListener('mousemove', handleMove);
+    canvasArea.addEventListener('touchmove', handleMove, { passive: false });
+
+    document.addEventListener('mouseup', (e) => {
+      handleEnd(e);
+      checkNodeTap(e);
+    });
+
+    canvasArea.addEventListener('touchend', (e) => {
+      handleEnd(e);
+      if (e.changedTouches && e.changedTouches.length === 1) {
+        checkNodeTap({ clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY });
+      }
+    });
+
+    function checkNodeTap(e) {
+      if (!tapStartPos) return;
+
+      const dx = Math.abs(e.clientX - tapStartPos.x);
+      const dy = Math.abs(e.clientY - tapStartPos.y);
+      const dt = Date.now() - tapStartTime;
+
+      // Tap: minimal movement and short duration
+      if (dx < 10 && dy < 10 && dt < 300) {
+        const svg = document.getElementById('diagram');
+        const rect = svg.getBoundingClientRect();
+        const svgX = (e.clientX - rect.left - state.panX * state.scale) / state.scale;
+        const svgY = (e.clientY - rect.top - state.panY * state.scale) / state.scale;
+
+        // Find clicked node
+        for (const node of nodes) {
+          if (!state.layers[node.layer]) continue;
+          if (svgX >= node.x && svgX <= node.x + node.w &&
+              svgY >= node.y && svgY <= node.y + node.h) {
+            openCommentModal(node);
+            break;
+          }
+        }
+      }
+
+      tapStartPos = null;
+    }
+
+    // Mouse wheel zoom
+    canvasArea.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      state.scale = Math.max(0.3, Math.min(3, state.scale + delta));
+      applyTransform();
+    }, { passive: false });
+
+    // ===== CONTROL HANDLERS =====
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const preset = btn.dataset.preset;
+        state.preset = preset;
+        const config = presets[preset];
+        state.layers = { ...config.layers };
+        state.connections = { ...config.connections };
+        Object.entries(state.layers).forEach(([k, v]) => document.getElementById(`layer-${k}`).checked = v);
+        Object.entries(state.connections).forEach(([k, v]) => document.getElementById(`conn-${k}`).checked = v);
+        updateAll();
+      };
+    });
+
+    ['ui', 'logic', 'data', 'utils', 'external'].forEach(layer => {
+      document.getElementById(`layer-${layer}`).onchange = (e) => {
+        state.layers[layer] = e.target.checked;
+        state.preset = 'custom';
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        updateAll();
+      };
+    });
+
+    ['data', 'props', 'events', 'import'].forEach(conn => {
+      document.getElementById(`conn-${conn}`).onchange = (e) => {
+        state.connections[conn] = e.target.checked;
+        updateAll();
+      };
+    });
+
+    document.getElementById('zoom-in').onclick = () => {
+      state.scale = Math.min(3, state.scale + 0.2);
+      applyTransform();
+    };
+
+    document.getElementById('zoom-out').onclick = () => {
+      state.scale = Math.max(0.3, state.scale - 0.2);
+      applyTransform();
+    };
+
+    document.getElementById('zoom-reset').onclick = () => {
+      stopMomentum();
+      state.scale = 1;
+      state.panX = 0;
+      state.panY = 0;
+      applyTransform();
+    };
+
+    document.getElementById('modal-cancel').onclick = closeModal;
+    document.getElementById('modal-save').onclick = saveComment;
+    document.getElementById('modal').onclick = (e) => { if (e.target.id === 'modal') closeModal(); };
+
+    document.getElementById('copy-btn').onclick = () => {
+      const text = document.getElementById('prompt-output').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = 'Đã copy!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+      });
+    };
+
+    // ===== INIT =====
+    updateAll();
+  </script>
+</body>
+</html>
