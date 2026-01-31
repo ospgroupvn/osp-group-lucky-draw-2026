@@ -1,0 +1,11 @@
+name = "osp-group-lucky-draw-2026"
+compatibility_date = "2026-01-29"
+
+# Cloudflare Pages configuration
+pages_build_output_dir = "dist"
+
+[env.production]
+# Production environment variables can be added here
+
+[env.preview]
+# Preview environment variables can be added here
